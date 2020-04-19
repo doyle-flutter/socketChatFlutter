@@ -1,19 +1,21 @@
+//     <uses-permission android:name="android.permission.INTERNET"/>
+
+//     <application
+//         android:name="io.flutter.app.FlutterApplication"
+//         android:label="socketflutter"
+//         android:icon="@mipmap/ic_launcher"
+//         android:usesCleartextTraffic="true">
+
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter_socket_io/flutter_socket_io.dart';
 import 'package:flutter_socket_io/socket_io_manager.dart';
-void main() => runApp(MyMaterial());
 
-class MyMaterial extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: ChatPage(),
-    );
-  }
-}
-
+void main() => runApp(
+  MaterialApp(
+    home: ChatPage(),
+  )
+);
 
 class ChatPage extends StatefulWidget {
   @override
@@ -29,125 +31,34 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void initState() {
-    //Initializing the message list
     messages = List();
-    //Initializing the TextEditingController and ScrollController
     textController = TextEditingController();
     scrollController = ScrollController();
-    //Creating the socket
+
     socketIO = SocketIOManager().createSocketIO(
       'http://:3000',
       '/',
-    );
-    //Call init before doing anything with socket
-    socketIO.init();
-    //Subscribe to an event to listen to
-    socketIO.subscribe('receive_message', (jsonData) {
-      //Convert the JSON data received into a Map
-      Map<String, dynamic> data = json.decode(jsonData);
-      this.setState(() => messages.add(data));
-      scrollController.animateTo(
-        scrollController.position.maxScrollExtent,
-        duration: Duration(milliseconds: 600),
-        curve: Curves.ease,
-      );
-    });
-    //Connect to the socket
-    socketIO.connect();
+    )
+      ..init()
+      ..subscribe('receive_message', (jsonData) async{
+          await Future.microtask(() async{
+            return await json.decode(jsonData);
+          }).then((data){
+            this.setState(() => messages.add(data));
+            return;
+          }).then((_){
+            scrollController.animateTo(
+              scrollController.position.maxScrollExtent,
+              duration: Duration(milliseconds: 600),
+              curve: Curves.ease,
+            );
+            return;
+          });
+      })
+      ..connect();
     super.initState();
   }
 
-  Widget buildSingleMessage(int index) {
-    print(messages);
-    return Container(
-      alignment: messages[index]['name'] == "James"
-      ? Alignment.centerRight
-      : Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.all(20.0),
-        margin: const EdgeInsets.only(bottom: 20.0, left: 20.0),
-        decoration: BoxDecoration(
-          color: Colors.deepPurple,
-          borderRadius: BorderRadius.circular(20.0),
-        ),
-        child: Text(
-          messages[index]['message'],
-          style: TextStyle(color: Colors.white, fontSize: 15.0),
-        ),
-      ),
-    );
-  }
-
-  Widget buildMessageList() {
-    return Container(
-      height: height * 0.8,
-      width: width,
-      child: ListView.builder(
-        controller: scrollController,
-        itemCount: messages.length,
-        itemBuilder: (BuildContext context, int index) {
-          return buildSingleMessage(index);
-        },
-      ),
-    );
-  }
-
-  Widget buildChatInput() {
-    return Container(
-      width: width * 0.7,
-      padding: const EdgeInsets.all(2.0),
-      margin: const EdgeInsets.only(left: 40.0),
-      child: TextField(
-        decoration: InputDecoration.collapsed(
-          hintText: 'Send a message...',
-        ),
-        controller: textController,
-      ),
-    );
-  }
-
-  Widget buildSendButton() {
-    return FloatingActionButton(
-      backgroundColor: Colors.deepPurple,
-      onPressed: () {
-        //Check if the textfield has text or not
-        if (textController.text.isNotEmpty) {
-          //Send the message as JSON data to send_message event
-          socketIO.sendMessage(
-              'send_message', json.encode(
-              {
-                "message": textController.text,
-                "name" :"James"
-              }
-            ));
-          this.setState(() => messages.add({"message": textController.text, "name" :"James"}));
-          textController.text = '';
-          scrollController.animateTo(
-            scrollController.position.maxScrollExtent,
-            duration: Duration(milliseconds: 600),
-            curve: Curves.ease,
-          );
-        }
-      },
-      child: Icon(
-        Icons.send,
-        size: 30,
-      ),
-    );
-  }
-
-  Widget buildInputArea() {
-    return Container(
-      height: height * 0.1,
-      width: width,
-      child: Row(
-        children: <Widget>[
-          buildChatInput(),
-          buildSendButton(),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,8 +69,83 @@ class _ChatPageState extends State<ChatPage> {
         child: Column(
           children: <Widget>[
             SizedBox(height: height * 0.1),
-            buildMessageList(),
-            buildInputArea(),
+            Container(
+              height: height * 0.8,
+              width: width,
+              child: ListView.builder(
+                controller: scrollController,
+                itemCount: messages.length,
+                itemBuilder: (BuildContext context, int index) {
+                  return Container(
+                    alignment: messages[index]['name'] == "James"
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
+                    child: Container(
+                      padding: const EdgeInsets.all(20.0),
+                      margin: const EdgeInsets.only(bottom: 20.0, left: 20.0),
+                      decoration: BoxDecoration(
+                        color: Colors.deepPurple,
+                        borderRadius: BorderRadius.circular(20.0),
+                      ),
+                      child: Text(
+                        messages[index]['message'],
+                        style: TextStyle(color: Colors.white, fontSize: 15.0),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            Container(
+              height: height * 0.1,
+              width: width,
+              child: Row(
+                children: <Widget>[
+                  Container(
+                    width: width * 0.7,
+                    padding: const EdgeInsets.all(2.0),
+                    margin: const EdgeInsets.only(left: 40.0),
+                    child: TextField(
+                      decoration: InputDecoration.collapsed(
+                        hintText: 'Send a message...',
+                      ),
+                      controller: textController,
+                    ),
+                  ),
+                  FloatingActionButton(
+                    backgroundColor: Colors.deepPurple,
+                    onPressed: () async{
+                      if (textController.text.isNotEmpty) {
+                        //Send the message as JSON data to send_message event
+                        await Future.microtask((){
+                          socketIO.sendMessage(
+                              'send_message', json.encode(
+                              {
+                                "message": textController.text,
+                                "name" :"James"
+                              }
+                          ));
+                          return;
+                        }).then((_){
+                          this.setState((){});
+                          textController.text = '';
+                          return;
+                        }).then((_){
+                          scrollController.animateTo(
+                            scrollController.position.maxScrollExtent,
+                            duration: Duration(milliseconds: 600),
+                            curve: Curves.ease,
+                          );
+                        });
+                      }
+                    },
+                    child: Icon(
+                      Icons.send, size: 30,
+                    ),
+                  ),
+                ],
+              ),
+            )
           ],
         ),
       ),
