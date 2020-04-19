@@ -1,3 +1,6 @@
+// flutter_socket_io: ^0.6.0
+// https://pub.dev/packages/flutter_socket_io#-installing-tab-
+
 //     <uses-permission android:name="android.permission.INTERNET"/>
 
 //     <application
