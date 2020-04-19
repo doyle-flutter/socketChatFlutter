@@ -22,7 +22,7 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   SocketIO socketIO;
-  List<String> messages;
+  List messages;
   double height, width;
   TextEditingController textController;
   ScrollController scrollController;
@@ -30,7 +30,7 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     //Initializing the message list
-    messages = List<String>();
+    messages = List();
     //Initializing the TextEditingController and ScrollController
     textController = TextEditingController();
     scrollController = ScrollController();
@@ -45,7 +45,7 @@ class _ChatPageState extends State<ChatPage> {
     socketIO.subscribe('receive_message', (jsonData) {
       //Convert the JSON data received into a Map
       Map<String, dynamic> data = json.decode(jsonData);
-      this.setState(() => messages.add(data['message']));
+      this.setState(() => messages.add(data));
       scrollController.animateTo(
         scrollController.position.maxScrollExtent,
         duration: Duration(milliseconds: 600),
@@ -58,8 +58,11 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget buildSingleMessage(int index) {
+    print(messages);
     return Container(
-      alignment: Alignment.centerLeft,
+      alignment: messages[index]['name'] == "James"
+      ? Alignment.centerRight
+      : Alignment.centerLeft,
       child: Container(
         padding: const EdgeInsets.all(20.0),
         margin: const EdgeInsets.only(bottom: 20.0, left: 20.0),
@@ -68,7 +71,7 @@ class _ChatPageState extends State<ChatPage> {
           borderRadius: BorderRadius.circular(20.0),
         ),
         child: Text(
-          messages[index],
+          messages[index]['message'],
           style: TextStyle(color: Colors.white, fontSize: 15.0),
         ),
       ),
@@ -111,11 +114,14 @@ class _ChatPageState extends State<ChatPage> {
         if (textController.text.isNotEmpty) {
           //Send the message as JSON data to send_message event
           socketIO.sendMessage(
-              'send_message', json.encode({'message': textController.text}));
-          //Add the message to the list
-          this.setState(() => messages.add(textController.text));
+              'send_message', json.encode(
+              {
+                "message": textController.text,
+                "name" :"James"
+              }
+            ));
+          this.setState(() => messages.add({"message": textController.text, "name" :"James"}));
           textController.text = '';
-          //Scrolldown the list to show the latest message
           scrollController.animateTo(
             scrollController.position.maxScrollExtent,
             duration: Duration(milliseconds: 600),
