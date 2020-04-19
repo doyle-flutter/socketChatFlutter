@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Hi Flutter</title>
+  <style>
+    div.title{
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 10%;
+        z-index: 100;
+        background-color: white;
+        text-align: center;
+    }
+    div.chatLogsWrapper {
+        position: fixed;
+        top: 10%;
+        right: 0;
+        left: 0;
+        height: 70%;
+        bottom: 20%;
+        overflow: scroll;
+        overflow-x: hidden;
+        padding: 0 100px 0 100px;
+        background-color: #ccc;
+    }
+    div.chatTxt{
+        position: fixed;
+        top: 80%;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        background-color: #ccc;
+        font-size: 0;
+        padding: 0;
+        margin: 0;
+        height: 20%;
+
+    }
+    div.chatTxt  > input.chat{
+        width: 80%;
+        height: 100%;
+        display: inline-block;
+        font-size: 1.2rem;
+        padding: 0;
+        margin: 0;
+        border: 0;
+    }
+    div.chatTxt  > button{
+        width: 20%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+        display: inline-block;
+        font-size: 1.2rem;
+        background-color: blue;
+        color: white;
+        border: 0;
+    }
+</style>
+
+</head>
+<body>
+  <div class="container">
+    <div class="title">
+        <h2>Hi Flutter</h2>
+    </div>
+    <div id="chatLogsWrapper" class="chatLogsWrapper">
+        <div id="chatLogs" class="chatLogs"></div>
+    </div>
+    
+    <div class="chatTxt">
+        <input type="text" class="chat" name="chat" id="chat" placeholder="chat">
+        <button id="btnn" type="submit" onclick="myFunction()">SEND</button>
+    </div>
+    
+
+    
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+
+
+    var btn = document.getElementById("btnn");
+    var chat = document.getElementById("chat");
+    var chatLogsWrapper = document.getElementById("chatLogsWrapper");
+
+    var socket = io();
+
+    var chatData = [];
+
+    socket.on("receive_message", function(data) {
+        var myElement = document.getElementById("chatLogs");
+        chatData.push(`${data['name']} : ${data['message']}`);
+
+        var node = document.createElement("P");
+        myElement.appendChild(node);
+        if(data['name'] === "Piter"){
+            node.style.textAlign = "left";
+        }   
+        else{
+            node.style.textAlign = "right";
+        }
+        node.innerText = chatData[chatData.length-1];
+
+        chatLogsWrapper.scrollTo(0,chatLogsWrapper.scrollHeight)
+    });
+    
+
+
+    myFunction = async () => {
+        await socket.emit("send_message", 
+            {
+                message:chat.value,
+                name:"Piter"
+            }
+        ); 
+        chat.value ="";
+    }
+
+    document.addEventListener('keydown', function(event) {
+        if(event.keyCode === 13){
+            myFunction();
+            chatLogsWrapper.scrollTo(0,chatLogsWrapper.scrollHeight)
+        }
+    }, true);
+  </script>
+</body>
+</html>
